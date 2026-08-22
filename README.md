@@ -84,33 +84,83 @@ Court Tally records recreational scores only. It does not provide medical, fitne
 
 ## Current status and milestones
 
-**Status: documentation scaffold and issue backlog only.** No production app, build, package, or test result is claimed yet.
+**Status: pre-MVP application foundation.** The repository contains a routed Flutter shell, explicit architecture boundaries, dependency injection, automated tests, and CI. It does not yet implement or claim working sport scoring, persistence, release signing, or store publication.
 
-1. Bootstrap Flutter project, quality gates, and CI.
+1. **Foundation:** Flutter project, quality gates, and CI.
 2. Implement and test the rule-aware scoring domain.
 3. Add local persistence and resumable matches.
 4. Deliver the accessible live scoring workflow.
 5. Add history, export/import, and privacy controls.
 6. Verify platforms and prepare reproducible release artifacts.
 
+See [docs/architecture.md](docs/architecture.md) for layer rules and dependency direction.
+
+## Supported toolchain and platforms
+
+Toolchain updates are deliberate changes reviewed with generated platform files and CI. The checked-in policy is:
+
+| Component | Supported policy |
+|---|---|
+| Flutter | Stable **3.47.0**, pinned by `.fvmrc` and CI |
+| Dart | **3.13.0** minimum, `<4.0.0` |
+| Android | API **24** minimum; compile/target API **36**; Java 17 |
+| iOS | **15.0** minimum; current Xcode on a supported macOS runner |
+
+The Android and iOS values are explicit in their generated project files. Raising any minimum requires a documented compatibility decision. Flutter/Dart upgrades must update `.fvmrc`, `pubspec.yaml`, CI, platform files, and this table together.
+
 ## Development quickstart
 
-Prerequisites (once the app skeleton lands):
+### Prerequisites
 
-- Flutter stable SDK and Dart included with Flutter
-- Android Studio/SDK for Android builds
-- Xcode on macOS for iOS builds
+- Flutter 3.47.0 stable with Dart 3.13.0. FVM users can run `fvm install` from the repository root; otherwise install that exact SDK from the official Flutter archive.
+- Java 17 and Android SDK Platform 36 for Android builds.
+- Xcode with iOS 15-or-newer SDK support and CocoaPods on macOS for iOS builds.
 
-Expected commands:
+Confirm the active environment before developing:
 
 ```sh
+flutter --version
+flutter doctor -v
 flutter pub get
+```
+
+### Quality gates
+
+Run the same checks as the Linux CI quality job:
+
+```sh
+dart format --output=none --set-exit-if-changed .
 flutter analyze
 flutter test
+```
+
+Run locally with a connected simulator or device:
+
+```sh
 flutter run
 ```
 
-Until the project-skeleton issue is complete, this repository contains product and implementation documentation only.
+### Platform build checks
+
+```sh
+# Development-only Android APK; not a signed release artifact.
+flutter build apk --debug
+
+# macOS only: non-distributable iOS simulator build, without code signing.
+flutter build ios --simulator --debug --no-codesign
+```
+
+CI runs both checks on supported runners. Passing them does not prove a physical-device run, accessibility review, release signing, TestFlight upload, or store publication.
+
+### Troubleshooting
+
+- **Wrong SDK:** compare `flutter --version` with the pinned versions above; remove stale `.dart_tool/` and rerun `flutter pub get` after switching.
+- **Android SDK not found:** install Platform 36, set `ANDROID_HOME` or run `flutter config --android-sdk <path>`, then accept licenses with `flutter doctor --android-licenses`.
+- **Java/Gradle mismatch:** ensure `java -version` reports Java 17 before building Android.
+- **iOS setup failures:** iOS builds require macOS/Xcode. Run `flutter doctor -v`, open `ios/Runner.xcworkspace`, and refresh CocoaPods dependencies if Xcode reports missing pods.
+- **Stale generated output:** run `flutter clean` followed by `flutter pub get`; do not commit `build/`, `.dart_tool/`, signing credentials, or local SDK paths.
+
+Dependency resolution and CI setup require development-time network access. The shipped app foundation itself declares no network, location, contacts, health, Bluetooth, microphone, camera, notification, or broad-storage permission.
 
 ## License
 
