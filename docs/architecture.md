@@ -23,11 +23,14 @@ application ───────► domain ◄────── data
 
 The domain layer must not import Flutter, Riverpod, platform channels, persistence, or any outer layer. `test/architecture/domain_boundary_test.dart` enforces that rule. Repository interfaces live in the application layer; concrete adapters live in data. Riverpod providers are confined to presentation as the composition root.
 
-## Current foundation flow
+## Current application flow
 
 1. `MainApp` establishes the Riverpod dependency-injection scope.
 2. `productStatusRepositoryProvider` supplies the local data adapter.
 3. `LoadProductStatus` reads the repository port.
 4. `PreMvpScreen` renders the pure-Dart `ProductStatus` through the named home route.
 
-No sport scoring rule is implemented in this milestone. Later rule reducers belong in domain and must remain runnable with `flutter test` without widget or device setup.
+The pure-Dart scoring model, named presets, sport rules, and reducer live under
+`lib/src/domain/scoring/`. They remain independent of Flutter and can be
+exercised with ordinary unit tests. The presentation shell is intentionally not
+wired to scoring until the setup/live-scoring milestone.
