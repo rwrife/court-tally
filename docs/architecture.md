@@ -32,5 +32,15 @@ The domain layer must not import Flutter, Riverpod, platform channels, persisten
 
 The pure-Dart scoring model, named presets, sport rules, and reducer live under
 `lib/src/domain/scoring/`. They remain independent of Flutter and can be
-exercised with ordinary unit tests. The presentation shell is intentionally not
-wired to scoring until the setup/live-scoring milestone.
+exercised with ordinary unit tests.
+
+`MatchRepository` is the application-layer persistence contract. Its Drift
+adapter stores configurations and ordered score events transactionally, then
+replays those events to return derived state. `InMemoryMatchRepository` follows
+the same sequence/conflict contract for tests. Riverpod owns the app-private
+database lifetime in the presentation composition root, but persistence types
+never cross inward into application or domain code. See
+[the versioned schema and recovery contract](local-data-schema.md).
+
+The presentation shell is intentionally not wired to live scoring until the
+setup/live-scoring milestone.
