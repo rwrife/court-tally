@@ -82,9 +82,13 @@ Create the Flutter package layout, pin supported SDK versions, add formatting/li
 
 Implement the event model, reducer contract, and sport rules one at a time. Add table-driven examples for ordinary games and edge cases: deuce/win-by-two, caps where supported, tennis tiebreaks, service changes, deciding games, invalid transitions, undo, and completion.
 
-### M3 — Local repository and recovery
+### M3 — Local repository and recovery (completed)
 
-Add Drift schema/migrations, transactional event persistence, in-progress recovery, presets, and history queries. Prove reducer replay reproduces persisted match state.
+Drift schema/migrations, transactional event persistence, in-progress recovery,
+presets, and history queries are implemented behind an application port.
+Reducer replay is the authoritative source of persisted match state; see
+[`docs/local-data-schema.md`](docs/local-data-schema.md) for the schema and
+failure contract.
 
 ### M4 — Primary scoring workflow
 
