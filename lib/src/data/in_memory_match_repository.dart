@@ -17,6 +17,7 @@ final class InMemoryMatchRepository implements MatchRepository {
   Future<RepositoryResult<PersistedMatch>> createMatch(
     MatchConfiguration configuration, {
     required DateTime createdAt,
+    SideId? initialServer,
   }) async {
     final creation = const MatchReducer().create(configuration);
     if (creation case MatchCreationRejected(:final errors)) {
@@ -39,6 +40,15 @@ final class InMemoryMatchRepository implements MatchRepository {
       createdAt: createdAt.toUtc(),
       updatedAt: createdAt.toUtc(),
     );
+    if (initialServer != null) {
+      memory.events.add(
+        PersistedScoreEvent(
+          sequence: 0,
+          event: InitialServerChosen(initialServer),
+          occurredAt: createdAt.toUtc(),
+        ),
+      );
+    }
     _matches[configuration.id] = memory;
     return RepositorySuccess<PersistedMatch>(_materialize(memory));
   }
@@ -103,6 +113,18 @@ final class InMemoryMatchRepository implements MatchRepository {
       );
     }
     return RepositorySuccess<PersistedMatch>(_materialize(memory));
+  }
+
+  @override
+  Future<RepositoryResult<void>> deleteMatch(String matchId) async {
+    if (_matches.remove(matchId) == null) {
+      return const RepositoryFailure<void>(
+        code: RepositoryFailureCode.notFound,
+        message: 'The match no longer exists.',
+        isRecoverable: true,
+      );
+    }
+    return const RepositorySuccess<void>(null);
   }
 
   @override

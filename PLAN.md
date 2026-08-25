@@ -90,9 +90,15 @@ Reducer replay is the authoritative source of persisted match state; see
 [`docs/local-data-schema.md`](docs/local-data-schema.md) for the schema and
 failure contract.
 
-### M4 — Primary scoring workflow
+### M4 — Primary scoring workflow (completed)
 
-Build setup and live-scoring screens with large two-side controls, server and side state, undo/redo, confirmation boundaries, orientation support, and accessibility semantics.
+The app now provides validated sport/preset and singles/doubles setup, local
+resume, two large score controls, deterministic server and change-ends state,
+undo/redo, confirmed completion and abandonment boundaries, responsive
+portrait/landscape layout, live-region semantics, and reduced-motion-safe
+behavior. Automated widget tests cover the setup-to-finish and relaunch paths;
+see [`docs/accessibility.md`](docs/accessibility.md) for the automated/manual
+evidence boundary.
 
 ### M5 — History and data ownership
 

@@ -99,9 +99,12 @@ final class MatchHistoryFilter {
 abstract interface class MatchRepository {
   Future<RepositoryResult<void>> initialize();
 
+  /// Creates a validated configuration. When [initialServer] is supplied, the
+  /// configuration and `InitialServerChosen` event must commit atomically.
   Future<RepositoryResult<PersistedMatch>> createMatch(
     MatchConfiguration configuration, {
     required DateTime createdAt,
+    SideId? initialServer,
   });
 
   Future<RepositoryResult<PersistedMatch>> appendEvent({
@@ -112,6 +115,9 @@ abstract interface class MatchRepository {
   });
 
   Future<RepositoryResult<PersistedMatch>> loadMatch(String matchId);
+
+  /// Permanently removes a match after explicit user confirmation.
+  Future<RepositoryResult<void>> deleteMatch(String matchId);
 
   /// Returns the most recently updated unfinished match, if one exists.
   Future<RepositoryResult<PersistedMatch?>> loadResumableMatch();

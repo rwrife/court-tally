@@ -20,12 +20,20 @@ version.
 | `match_participants` | Ordered, historical membership snapshot for each side | `(match_id, side, position)`; participant id and name-at-match-creation |
 | `score_events` | Authoritative append-only scoring history | `(match_id, sequence)`; event type, version-1 JSON payload, occurrence timestamp |
 
-Foreign keys are enabled on every connection. Match deletion cascades only to
-its membership and event rows; participant and preset records remain separate.
-The reducer's named `RulesPreset` is resolved by both id and version, so an
-unknown persisted rules contract fails closed instead of being approximated.
+Foreign keys are enabled on every connection. Match deletion cascades to its
+membership and event rows, then removes participant records that no remaining
+match references; shared participant records are retained. Preset records remain
+separate. The reducer's named `RulesPreset` is resolved by both id and version,
+so an unknown persisted rules contract fails closed instead of being
+approximated.
 
 ## Transaction and replay contract
+
+`DriftMatchRepository.createMatch` can persist the validated configuration and
+`InitialServerChosen` event in one transaction. A setup crash or write failure
+therefore cannot expose a newly created match without its chosen server. Older or
+test-created rows still awaiting a server resume into a dedicated recovery step
+instead of being treated as live.
 
 `DriftMatchRepository.appendEvent` performs these steps in one SQLite
 transaction:
@@ -83,6 +91,6 @@ can keep the scoring action in memory, explain that saving failed, and offer a
 retry after storage or app-update problems are resolved.
 
 Tests cover first migration (including preservation of an unrelated legacy
-row), corrupt-file preservation, transaction rollback, relaunch/resume,
-replay equivalence, stale-sequence rejection, rejected events, and all history
-filters.
+row), corrupt-file preservation, atomic setup and rollback, relaunch/resume,
+replay equivalence, stale-sequence rejection, rejected events, privacy-safe
+match deletion, shared-participant retention, and all history filters.

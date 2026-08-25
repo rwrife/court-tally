@@ -211,6 +211,107 @@ void main() {
       },
     );
 
+    test('rolls back setup if the atomic initial-server write fails', () async {
+      final configuration = _configuration(
+        'atomic-start-rollback',
+        RulesPreset.badmintonBestOfThree,
+      );
+      await database.customStatement('''
+        CREATE TRIGGER fail_atomic_start
+        BEFORE UPDATE ON matches
+        BEGIN
+          SELECT RAISE(ABORT, 'simulated initial-server failure');
+        END
+      ''');
+
+      final result = await repository.createMatch(
+        configuration,
+        createdAt: DateTime.utc(2026, 8, 21),
+        initialServer: SideId.one,
+      );
+
+      expect(result, isA<RepositoryFailure<PersistedMatch>>());
+      for (final table in <String>[
+        'matches',
+        'match_participants',
+        'score_events',
+        'participants',
+      ]) {
+        final count = await database
+            .customSelect('SELECT COUNT(*) AS count FROM $table')
+            .getSingle();
+        expect(count.read<int>('count'), 0, reason: '$table must roll back');
+      }
+    });
+
+    test(
+      'removes unreferenced participant names when a match is deleted',
+      () async {
+        final configuration = _configuration(
+          'delete-pii-match',
+          RulesPreset.tableTennisBestOfFive,
+          oneName: 'Private North',
+          twoName: 'Private South',
+        );
+        _success<PersistedMatch>(
+          await repository.createMatch(
+            configuration,
+            createdAt: DateTime.utc(2026, 8, 21),
+            initialServer: SideId.one,
+          ),
+        );
+
+        _success<void>(await repository.deleteMatch(configuration.id));
+
+        final participantCount = await database
+            .customSelect('SELECT COUNT(*) AS count FROM participants')
+            .getSingle();
+        expect(participantCount.read<int>('count'), 0);
+      },
+    );
+
+    test(
+      'retains participants that are still referenced by another match',
+      () async {
+        final first = _configuration(
+          'delete-shared-first',
+          RulesPreset.badmintonBestOfThree,
+          oneId: 'shared-player',
+          twoId: 'first-only-player',
+        );
+        final second = _configuration(
+          'delete-shared-second',
+          RulesPreset.badmintonBestOfThree,
+          oneId: 'shared-player',
+          twoId: 'second-only-player',
+        );
+        _success<PersistedMatch>(
+          await repository.createMatch(
+            first,
+            createdAt: DateTime.utc(2026, 8, 21),
+          ),
+        );
+        _success<PersistedMatch>(
+          await repository.createMatch(
+            second,
+            createdAt: DateTime.utc(2026, 8, 22),
+          ),
+        );
+
+        _success<void>(await repository.deleteMatch(first.id));
+
+        final remainingIds = await database
+            .select(database.participants)
+            .map((row) => row.id)
+            .get();
+        expect(
+          remainingIds,
+          containsAll(<String>['shared-player', 'second-only-player']),
+        );
+        expect(remainingIds, isNot(contains('first-only-player')));
+      },
+    );
+
     test('rejects invalid events without appending them', () async {
       final configuration = _configuration(
         'rejected-match',
@@ -267,6 +368,31 @@ void main() {
       });
 
       tearDown(() async => fixture.close?.call());
+
+      test(
+        'creates a started match with its initial server atomically',
+        () async {
+          final configuration = _configuration(
+            'atomic-start-match',
+            RulesPreset.tennisBestOfThree,
+          );
+
+          final started = _success<PersistedMatch>(
+            await fixture.repository.createMatch(
+              configuration,
+              createdAt: DateTime.utc(2026, 8, 24),
+              initialServer: SideId.two,
+            ),
+          );
+
+          expect(started.state.status, MatchStatus.inProgress);
+          expect(started.state.initialServer, SideId.two);
+          expect(started.state.server, SideId.two);
+          expect(started.events, hasLength(1));
+          expect(started.events.single.event, isA<InitialServerChosen>());
+          expect(started.nextSequence, 1);
+        },
+      );
 
       test(
         'queries by date, sport, participant name, and completion',
@@ -436,6 +562,54 @@ void main() {
           );
           expect(loaded.events, hasLength(1));
           expect(_fingerprint(loaded.state), _fingerprint(first.state));
+        },
+      );
+
+      test(
+        'deletes an explicitly abandoned match and its event stream',
+        () async {
+          final configuration = _configuration(
+            'abandoned-match',
+            RulesPreset.tableTennisBestOfFive,
+          );
+          var saved = _success<PersistedMatch>(
+            await fixture.repository.createMatch(
+              configuration,
+              createdAt: DateTime.utc(2026, 8, 23),
+            ),
+          );
+          saved = await _append(
+            fixture.repository,
+            saved,
+            const InitialServerChosen(SideId.one),
+            1,
+          );
+          saved = await _append(
+            fixture.repository,
+            saved,
+            const PointAwarded(SideId.one),
+            2,
+          );
+
+          _success<void>(
+            await fixture.repository.deleteMatch(configuration.id),
+          );
+
+          final loaded = await fixture.repository.loadMatch(configuration.id);
+          expect(loaded, isA<RepositoryFailure<PersistedMatch>>());
+          expect(
+            (loaded as RepositoryFailure<PersistedMatch>).code,
+            RepositoryFailureCode.notFound,
+          );
+          final history = _success<List<PersistedMatch>>(
+            await fixture.repository.queryHistory(const MatchHistoryFilter()),
+          );
+          expect(
+            history.where(
+              (match) => match.configuration.id == configuration.id,
+            ),
+            isEmpty,
+          );
         },
       );
     });
