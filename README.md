@@ -84,12 +84,12 @@ Court Tally records recreational scores only. It does not provide medical, fitne
 
 ## Current status and milestones
 
-**Status: local-persistence milestone.** The repository contains a routed Flutter shell, explicit architecture boundaries, dependency injection, automated tests, a pure-Dart event-sourced scoring domain, and a versioned Drift/SQLite repository with transactional event appends and resumable matches. The scoring domain is not yet connected to a live scoring UI, and the project does not claim release signing or store publication.
+**Status: primary scoring workflow complete.** The repository contains a routed Flutter app, explicit architecture boundaries, dependency injection, automated tests, a pure-Dart event-sourced scoring domain, crash-safe Drift/SQLite persistence, and an accessible setup-to-finish scoring workflow. In-progress matches resume locally; completed matches remain available to the repository history boundary. History browsing, data export/import, release signing, and store publication are not yet complete.
 
 1. **Foundation:** Flutter project, quality gates, and CI.
 2. **Completed:** implement and test the rule-aware scoring domain. See [the supported rules and sources](docs/scoring-rules.md).
 3. **Completed:** add local persistence and resumable matches. See [the local schema and recovery contract](docs/local-data-schema.md).
-4. Deliver the accessible live scoring workflow.
+4. **Completed:** deliver the accessible live scoring workflow. See [the accessibility contract](docs/accessibility.md).
 5. Add history, export/import, and privacy controls.
 6. Verify platforms and prepare reproducible release artifacts.
 

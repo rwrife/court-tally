@@ -33,6 +33,7 @@ final class DriftMatchRepository implements MatchRepository {
   Future<RepositoryResult<PersistedMatch>> createMatch(
     MatchConfiguration configuration, {
     required DateTime createdAt,
+    SideId? initialServer,
   }) async {
     final creation = const MatchReducer().create(configuration);
     if (creation case MatchCreationRejected(:final errors)) {
@@ -77,6 +78,33 @@ final class DriftMatchRepository implements MatchRepository {
               ),
             );
         await _insertMatchParticipants(configuration);
+        if (initialServer != null) {
+          final event = InitialServerChosen(initialServer);
+          final initialState = (creation as MatchCreated).state;
+          final transition = const MatchReducer().apply(initialState, event);
+          final nextState = (transition as ScoreAccepted).state;
+          final encoded = encodeScoreEvent(event);
+          await database
+              .into(database.scoreEvents)
+              .insert(
+                ScoreEventsCompanion.insert(
+                  matchId: configuration.id,
+                  sequence: 0,
+                  eventType: encoded.type,
+                  payloadJson: encoded.payloadJson,
+                  occurredAt: timestamp,
+                ),
+              );
+          await (database.update(
+            database.storedMatches,
+          )..where((row) => row.id.equals(configuration.id))).write(
+            StoredMatchesCompanion(
+              status: Value<String>(nextState.status.name),
+              updatedAt: Value<DateTime>(timestamp),
+              lastEventSequence: const Value<int>(0),
+            ),
+          );
+        }
         return RepositorySuccess<PersistedMatch>(
           await _loadMatchOrThrow(configuration.id),
         );
@@ -183,6 +211,43 @@ final class DriftMatchRepository implements MatchRepository {
       );
     } catch (error) {
       return _operationFailure<PersistedMatch>(error);
+    }
+  }
+
+  @override
+  Future<RepositoryResult<void>> deleteMatch(String matchId) async {
+    try {
+      return await database.transaction(() async {
+        final links = await (database.select(
+          database.matchParticipants,
+        )..where((row) => row.matchId.equals(matchId))).get();
+        final deleted = await (database.delete(
+          database.storedMatches,
+        )..where((row) => row.id.equals(matchId))).go();
+        if (deleted == 0) {
+          return const RepositoryFailure<void>(
+            code: RepositoryFailureCode.notFound,
+            message: 'The match no longer exists.',
+            isRecoverable: true,
+          );
+        }
+        for (final participantId
+            in links.map((link) => link.participantId).toSet()) {
+          final remainingReference =
+              await (database.select(database.matchParticipants)
+                    ..where((row) => row.participantId.equals(participantId))
+                    ..limit(1))
+                  .getSingleOrNull();
+          if (remainingReference == null) {
+            await (database.delete(
+              database.participants,
+            )..where((row) => row.id.equals(participantId))).go();
+          }
+        }
+        return const RepositorySuccess<void>(null);
+      });
+    } catch (error) {
+      return _operationFailure<void>(error);
     }
   }
 
