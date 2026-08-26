@@ -128,6 +128,110 @@ final class InMemoryMatchRepository implements MatchRepository {
   }
 
   @override
+  Future<RepositoryResult<int>> deleteAllMatches() async {
+    final removed = _matches.length;
+    _matches.clear();
+    return RepositorySuccess<int>(removed);
+  }
+
+  @override
+  Future<RepositoryResult<MatchImportResult>> importMatches({
+    required List<PersistedMatch> matches,
+    required MatchImportMode mode,
+  }) async {
+    try {
+      final staged = <String, _MemoryMatch>{};
+      for (final match in matches) {
+        if (staged.containsKey(match.configuration.id)) {
+          throw FormatException(
+            'Backup contains duplicate match id ${match.configuration.id}.',
+          );
+        }
+        final errors = match.configuration.validate();
+        if (errors.isNotEmpty) {
+          throw FormatException(errors.map((error) => error.message).join(' '));
+        }
+        var previousTime = match.createdAt.toUtc();
+        for (var index = 0; index < match.events.length; index += 1) {
+          final event = match.events[index];
+          if (event.sequence != index ||
+              event.occurredAt.toUtc().isBefore(previousTime)) {
+            throw FormatException(
+              'Match ${match.configuration.id} has an invalid ordered event log.',
+            );
+          }
+          previousTime = event.occurredAt.toUtc();
+        }
+        final expectedUpdatedAt = match.events.isEmpty
+            ? match.createdAt.toUtc()
+            : match.events.last.occurredAt.toUtc();
+        if (match.updatedAt.toUtc() != expectedUpdatedAt) {
+          throw FormatException(
+            'Match ${match.configuration.id} has invalid timestamps.',
+          );
+        }
+        final replay = const MatchReducer().replay(
+          match.configuration,
+          match.events.map((event) => event.event),
+        );
+        if (replay case ScoreRejected(:final error)) {
+          throw FormatException(error.message);
+        }
+        final state = (replay as ScoreAccepted).state;
+        if (state.status != match.state.status ||
+            state.winner != match.state.winner) {
+          throw FormatException(
+            'Match ${match.configuration.id} summary does not match replay.',
+          );
+        }
+        if (state.isComplete != (match.completedAt != null) ||
+            (state.isComplete &&
+                match.completedAt?.toUtc() != expectedUpdatedAt)) {
+          throw FormatException(
+            'Match ${match.configuration.id} completion timestamp is invalid.',
+          );
+        }
+        final memory = _MemoryMatch(
+          configuration: match.configuration,
+          createdAt: match.createdAt.toUtc(),
+          updatedAt: match.updatedAt.toUtc(),
+          completedAt: match.completedAt?.toUtc(),
+        )..events.addAll(match.events);
+        staged[match.configuration.id] = memory;
+      }
+
+      final removed = mode == MatchImportMode.replace ? _matches.length : 0;
+      var imported = 0;
+      var skipped = 0;
+      if (mode == MatchImportMode.replace) {
+        _matches.clear();
+      }
+      for (final entry in staged.entries) {
+        if (_matches.containsKey(entry.key)) {
+          skipped += 1;
+        } else {
+          _matches[entry.key] = entry.value;
+          imported += 1;
+        }
+      }
+      return RepositorySuccess<MatchImportResult>(
+        MatchImportResult(
+          imported: imported,
+          skipped: skipped,
+          removed: removed,
+        ),
+      );
+    } on FormatException catch (error) {
+      return RepositoryFailure<MatchImportResult>(
+        code: RepositoryFailureCode.invalidData,
+        message: 'The backup failed replay validation. No data was changed.',
+        isRecoverable: true,
+        cause: error,
+      );
+    }
+  }
+
+  @override
   Future<RepositoryResult<PersistedMatch?>> loadResumableMatch() async {
     final candidates =
         _matches.values
@@ -218,6 +322,7 @@ final class _MemoryMatch {
     required this.configuration,
     required this.createdAt,
     required this.updatedAt,
+    this.completedAt,
   });
 
   final MatchConfiguration configuration;

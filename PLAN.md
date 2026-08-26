@@ -100,9 +100,13 @@ behavior. Automated widget tests cover the setup-to-finish and relaunch paths;
 see [`docs/accessibility.md`](docs/accessibility.md) for the automated/manual
 evidence boundary.
 
-### M5 — History and data ownership
+### M5 — History and data ownership (completed)
 
-Add match summaries, filters, detail/replay views, delete controls, versioned JSON backup/import, CSV export, and explicit privacy documentation in-app.
+Filterable match summaries, detail/event replay, confirmed one/all-history
+deletion, versioned lossless JSON backup/import with staged validation and
+transactional merge/replace, escaped CSV summaries, platform picker/share
+boundaries, and in-app privacy copy are implemented. See
+[`docs/data-ownership.md`](docs/data-ownership.md).
 
 ### M6 — Platform verification and release
 

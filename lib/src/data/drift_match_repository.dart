@@ -252,6 +252,91 @@ final class DriftMatchRepository implements MatchRepository {
   }
 
   @override
+  Future<RepositoryResult<int>> deleteAllMatches() async {
+    try {
+      return await database.transaction(() async {
+        final removed = await database.delete(database.storedMatches).go();
+        await database.delete(database.participants).go();
+        return RepositorySuccess<int>(removed);
+      });
+    } catch (error) {
+      return _operationFailure<int>(error);
+    }
+  }
+
+  @override
+  Future<RepositoryResult<MatchImportResult>> importMatches({
+    required List<PersistedMatch> matches,
+    required MatchImportMode mode,
+  }) async {
+    try {
+      _validateImportPayload(matches);
+      return await database.transaction(() async {
+        final existingRows = await database
+            .select(database.storedMatches)
+            .get();
+        final existingIds = existingRows.map((row) => row.id).toSet();
+        final removed = mode == MatchImportMode.replace
+            ? existingRows.length
+            : 0;
+        if (mode == MatchImportMode.replace) {
+          await database.delete(database.storedMatches).go();
+          await database.delete(database.participants).go();
+          existingIds.clear();
+        }
+
+        var imported = 0;
+        var skipped = 0;
+        for (final match in matches) {
+          if (existingIds.contains(match.configuration.id)) {
+            skipped += 1;
+            continue;
+          }
+          final creation = await createMatch(
+            match.configuration,
+            createdAt: match.createdAt,
+          );
+          if (creation case RepositoryFailure<PersistedMatch>(:final message)) {
+            throw StateError(message);
+          }
+          var persisted = (creation as RepositorySuccess<PersistedMatch>).value;
+          for (final savedEvent in match.events) {
+            final appended = await appendEvent(
+              matchId: match.configuration.id,
+              event: savedEvent.event,
+              expectedSequence: persisted.nextSequence,
+              occurredAt: savedEvent.occurredAt,
+            );
+            if (appended case RepositoryFailure<PersistedMatch>(
+              :final message,
+            )) {
+              throw StateError(message);
+            }
+            persisted = (appended as RepositorySuccess<PersistedMatch>).value;
+          }
+          imported += 1;
+        }
+        return RepositorySuccess<MatchImportResult>(
+          MatchImportResult(
+            imported: imported,
+            skipped: skipped,
+            removed: removed,
+          ),
+        );
+      });
+    } on FormatException catch (error) {
+      return RepositoryFailure<MatchImportResult>(
+        code: RepositoryFailureCode.invalidData,
+        message: 'The backup failed replay validation. No data was changed.',
+        isRecoverable: true,
+        cause: error,
+      );
+    } catch (error) {
+      return _operationFailure<MatchImportResult>(error);
+    }
+  }
+
+  @override
   Future<RepositoryResult<PersistedMatch?>> loadResumableMatch() async {
     try {
       final query = database.select(database.storedMatches)
@@ -475,6 +560,57 @@ final class DriftMatchRepository implements MatchRepository {
       updatedAt: row.updatedAt.toUtc(),
       completedAt: row.completedAt?.toUtc(),
     );
+  }
+
+  void _validateImportPayload(List<PersistedMatch> matches) {
+    final ids = <String>{};
+    for (final match in matches) {
+      final id = match.configuration.id;
+      if (!ids.add(id)) {
+        throw FormatException('Backup contains duplicate match id $id.');
+      }
+      final errors = match.configuration.validate();
+      if (errors.isNotEmpty) {
+        throw FormatException(errors.map((error) => error.message).join(' '));
+      }
+      if (match.updatedAt.isBefore(match.createdAt)) {
+        throw FormatException('Match $id has invalid timestamps.');
+      }
+      var previousTime = match.createdAt.toUtc();
+      for (var index = 0; index < match.events.length; index += 1) {
+        final event = match.events[index];
+        if (event.sequence != index ||
+            event.occurredAt.toUtc().isBefore(previousTime)) {
+          throw FormatException('Match $id has an invalid ordered event log.');
+        }
+        previousTime = event.occurredAt.toUtc();
+      }
+      final expectedUpdatedAt = match.events.isEmpty
+          ? match.createdAt.toUtc()
+          : match.events.last.occurredAt.toUtc();
+      if (match.updatedAt.toUtc() != expectedUpdatedAt) {
+        throw FormatException(
+          'Match $id updated timestamp does not match replay.',
+        );
+      }
+      final replay = const MatchReducer().replay(
+        match.configuration,
+        match.events.map((event) => event.event),
+      );
+      if (replay case ScoreRejected(:final error)) {
+        throw FormatException('Match $id was rejected: ${error.message}');
+      }
+      final state = (replay as ScoreAccepted).state;
+      if (state.status != match.state.status ||
+          state.winner != match.state.winner) {
+        throw FormatException('Match $id summary differs from replay.');
+      }
+      if (state.isComplete != (match.completedAt != null) ||
+          (state.isComplete &&
+              match.completedAt?.toUtc() != expectedUpdatedAt)) {
+        throw FormatException('Match $id completion timestamp is invalid.');
+      }
+    }
   }
 
   RepositoryFailure<T> _operationFailure<T>(Object error) {
