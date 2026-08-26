@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../application/match_repository.dart';
 import '../domain/scoring/scoring.dart';
 import 'dependencies.dart';
+import 'routes.dart';
 
 /// Owns the local setup-to-score workflow and restores unfinished matches.
 final class ScoringWorkflowScreen extends ConsumerStatefulWidget {
@@ -276,10 +277,32 @@ final class _ScoringWorkflowScreenState
     );
   }
 
+  Future<void> _openHistory() async {
+    await Navigator.of(context).pushNamed(AppRoutes.history);
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _loading = true;
+      _error = null;
+      _match = null;
+    });
+    await _restore();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Court Tally')),
+      appBar: AppBar(
+        title: const Text('Court Tally'),
+        actions: <Widget>[
+          IconButton(
+            tooltip: 'History and data',
+            onPressed: _busy ? null : _openHistory,
+            icon: const Icon(Icons.history),
+          ),
+        ],
+      ),
       body: SafeArea(
         child: switch ((_loading, _error, _match)) {
           (true, _, _) => const Center(child: CircularProgressIndicator()),

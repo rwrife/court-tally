@@ -33,6 +33,9 @@ ScoreEvent decodeScoreEvent(String type, String payloadJson) {
   }
 
   SideId side() {
+    if (decoded.length != 1 || !decoded.containsKey('side')) {
+      throw FormatException('$type payload must contain only side.');
+    }
     final value = decoded['side'];
     return SideId.values.firstWhere(
       (candidate) => candidate.name == value,
@@ -40,12 +43,19 @@ ScoreEvent decodeScoreEvent(String type, String payloadJson) {
     );
   }
 
+  ScoreEvent emptyEvent(ScoreEvent event) {
+    if (decoded.isNotEmpty) {
+      throw FormatException('$type payload must be empty.');
+    }
+    return event;
+  }
+
   return switch (type) {
     'initial_server_chosen' => InitialServerChosen(side()),
     'point_awarded' => PointAwarded(side()),
-    'sides_changed' => const SidesChanged(),
-    'point_undone' => const PointUndone(),
-    'point_redone' => const PointRedone(),
+    'sides_changed' => emptyEvent(const SidesChanged()),
+    'point_undone' => emptyEvent(const PointUndone()),
+    'point_redone' => emptyEvent(const PointRedone()),
     _ => throw FormatException('Unknown score-event type: $type'),
   };
 }

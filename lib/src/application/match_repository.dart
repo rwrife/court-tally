@@ -73,6 +73,21 @@ final class PersistedMatch {
 
 enum MatchCompletionFilter { any, inProgress, completed }
 
+enum MatchImportMode { merge, replace }
+
+/// Result of one atomic import write.
+final class MatchImportResult {
+  const MatchImportResult({
+    required this.imported,
+    required this.skipped,
+    required this.removed,
+  });
+
+  final int imported;
+  final int skipped;
+  final int removed;
+}
+
 /// Domain-facing history criteria. No widget, route, or display concerns leak
 /// into the repository boundary.
 final class MatchHistoryFilter {
@@ -118,6 +133,18 @@ abstract interface class MatchRepository {
 
   /// Permanently removes a match after explicit user confirmation.
   Future<RepositoryResult<void>> deleteMatch(String matchId);
+
+  /// Permanently removes every match and unreferenced participant in one write.
+  Future<RepositoryResult<int>> deleteAllMatches();
+
+  /// Applies a fully staged and replay-validated backup in one transaction.
+  ///
+  /// Merge keeps existing ids and imports only new matches. Replace removes all
+  /// existing history before importing the staged matches.
+  Future<RepositoryResult<MatchImportResult>> importMatches({
+    required List<PersistedMatch> matches,
+    required MatchImportMode mode,
+  });
 
   /// Returns the most recently updated unfinished match, if one exists.
   Future<RepositoryResult<PersistedMatch?>> loadResumableMatch();

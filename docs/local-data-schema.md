@@ -80,6 +80,20 @@ The filter contract lives in the application layer and contains no Flutter/UI
 concepts. The in-memory adapter implements the same optimistic-sequence,
 replay, resume, and filter behavior for tests.
 
+## Privacy deletion and transactional import
+
+`deleteMatch` cascades the selected event stream and membership snapshots, then
+removes participant rows no remaining match references. `deleteAllMatches`
+removes all match and participant history in one transaction. Presentation asks
+for explicit confirmation before either privacy action.
+
+`importMatches` accepts only fully staged `PersistedMatch` values. Both adapters
+revalidate configuration, contiguous sequences, timestamps, completion data,
+and deterministic replay before mutation. Merge skips existing match ids;
+replace deletes current history first. Drift wraps the selected behavior and all
+inserted events in one outer transaction, so any later failure restores the
+pre-import database. See [the JSON schema and user-facing import contract](data-ownership.md).
+
 ## Migration and failure policy
 
 Migration is additive and explicit. Future versions must add ordered

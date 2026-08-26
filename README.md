@@ -69,7 +69,8 @@ Court Tally is offline-first. Match names, score events, presets, and history re
 
 - **Baseline permissions:** none beyond ordinary app-local storage.
 - **Export:** the app invokes the platform share/save sheet only when the user requests export; the user chooses the destination.
-- **Import/backup:** versioned JSON backup/import is planned with validation, preview, and explicit conflict behavior.
+- **Import/backup:** versioned lossless JSON backup/import validates the complete document and every event stream in staging, previews changes, and applies explicit merge or replace behavior in one transaction. See [the data-ownership contract](docs/data-ownership.md).
+- **CSV:** correctly escaped match summaries are portable but intentionally not a lossless restore format.
 - **Notifications:** not required by the MVP. If reminders are added later, notification permission must be optional and requested in context.
 - **Sensors/location/contacts/microphone:** not used.
 - Uninstalling the app may remove its local data unless the user exported a backup first.
@@ -84,13 +85,13 @@ Court Tally records recreational scores only. It does not provide medical, fitne
 
 ## Current status and milestones
 
-**Status: primary scoring workflow complete.** The repository contains a routed Flutter app, explicit architecture boundaries, dependency injection, automated tests, a pure-Dart event-sourced scoring domain, crash-safe Drift/SQLite persistence, and an accessible setup-to-finish scoring workflow. In-progress matches resume locally; completed matches remain available to the repository history boundary. History browsing, data export/import, release signing, and store publication are not yet complete.
+**Status: local-first MVP feature set complete; platform/release verification remains.** The repository contains a routed Flutter app, explicit architecture boundaries, dependency injection, automated tests, a pure-Dart event-sourced scoring domain, crash-safe Drift/SQLite persistence, an accessible setup-to-finish scoring workflow, filterable local history with event replay, privacy deletion controls, versioned lossless JSON backup/import, and escaped CSV summary export. In-progress matches resume locally and completed matches remain user-owned local history. Physical-device accessibility checks, release signing, TestFlight/store publication, and reproducible release artifacts are not yet complete.
 
 1. **Foundation:** Flutter project, quality gates, and CI.
 2. **Completed:** implement and test the rule-aware scoring domain. See [the supported rules and sources](docs/scoring-rules.md).
 3. **Completed:** add local persistence and resumable matches. See [the local schema and recovery contract](docs/local-data-schema.md).
 4. **Completed:** deliver the accessible live scoring workflow. See [the accessibility contract](docs/accessibility.md).
-5. Add history, export/import, and privacy controls.
+5. **Completed:** add history, export/import, and privacy controls. See [the data-ownership contract](docs/data-ownership.md).
 6. Verify platforms and prepare reproducible release artifacts.
 
 See [docs/architecture.md](docs/architecture.md) for layer rules and dependency direction.
