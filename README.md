@@ -92,7 +92,11 @@ Court Tally records recreational scores only. It does not provide medical, fitne
 3. **Completed:** add local persistence and resumable matches. See [the local schema and recovery contract](docs/local-data-schema.md).
 4. **Completed:** deliver the accessible live scoring workflow. See [the accessibility contract](docs/accessibility.md).
 5. **Completed:** add history, export/import, and privacy controls. See [the data-ownership contract](docs/data-ownership.md).
-6. Verify platforms and prepare reproducible release artifacts.
+6. **Automated verification complete:** host integration, schema-fixture,
+   accessibility, responsiveness-sample, Android debug-build, and unsigned iOS
+   simulator-build gates are documented in
+   [the verification matrix](docs/verification.md). Physical-device,
+   screen-reader, signing, and publication checks remain explicitly pending.
 
 See [docs/architecture.md](docs/architecture.md) for layer rules and dependency direction.
 
@@ -130,9 +134,11 @@ flutter pub get
 Run the same checks as the Linux CI quality job:
 
 ```sh
+flutter pub get --enforce-lockfile
+git diff --exit-code
 dart format --output=none --set-exit-if-changed .
 flutter analyze
-flutter test
+flutter test --coverage
 ```
 
 Run locally with a connected simulator or device:

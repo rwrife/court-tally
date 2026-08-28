@@ -108,9 +108,15 @@ transactional merge/replace, escaped CSV summaries, platform picker/share
 boundaries, and in-app privacy copy are implemented. See
 [`docs/data-ownership.md`](docs/data-ownership.md).
 
-### M6 — Platform verification and release
+### M6 — Platform verification and release (automated verification complete)
 
-Run analyzer/tests and Android/iOS builds, exercise migration/export fixtures, perform an accessibility checklist, document signing, and produce reproducible release notes/artifacts without claiming store publication until it actually occurs.
+The checked-in verification suite runs analyzer/tests and Android/iOS compile
+checks, exercises every sport through persistence, covers SQLite/backup schema
+fixtures, records a defined responsiveness sample, and automates supported
+accessibility assertions. The manual TalkBack/VoiceOver and physical-use matrix
+is documented with every unperformed result explicitly marked pending. Signing,
+release notes/artifacts, TestFlight, and store publication remain separate
+release work; see [`docs/verification.md`](docs/verification.md).
 
 ## Testing strategy
 

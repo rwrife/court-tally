@@ -108,3 +108,10 @@ Tests cover first migration (including preservation of an unrelated legacy
 row), corrupt-file preservation, atomic setup and rollback, relaunch/resume,
 replay equivalence, stale-sequence rejection, rejected events, privacy-safe
 match deletion, shared-participant retention, and all history filters.
+
+`test/fixtures/database/` contains one immutable SQL fixture for every committed
+SQLite schema version, and `test/fixtures/backups/` does the same for lossless
+JSON backup versions. `test/data/schema_version_fixture_test.dart` opens or
+imports every fixture with current code and asserts preserved user data. A
+schema-version increment is incomplete until its pre-upgrade fixture and
+ordered migration assertion are committed.
