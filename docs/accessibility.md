@@ -34,6 +34,12 @@ The workflow sets a busy state before every repository write. Additional callbac
 
 `test/data/match_repository_test.dart` verifies explicit deletion in both in-memory and Drift adapters, including cascade removal of the event stream.
 
+`test/presentation/accessibility_verification_test.dart` additionally asserts
+the explicit score/action focus order, score semantics under 200% text with
+reduced motion enabled, and 4.5:1-or-better contrast for key light/dark color
+pairs. The broader automated/manual matrix and pending device checklist are in
+[`verification.md`](verification.md).
+
 ## Manual evidence not claimed
 
-Automated widget tests do **not** prove a physical-device run, sunlight readability, one-handed reach, switch-control behavior, TalkBack speech, VoiceOver speech, platform focus announcements, haptics, or assistive-technology regressions. Those Android/iOS manual checks remain part of the platform-verification milestone and must be reported separately when actually performed.
+Automated widget tests do **not** prove a physical-device run, sunlight readability, one-handed reach, switch-control behavior, TalkBack speech, VoiceOver speech, platform focus announcements, haptics, or assistive-technology regressions. Those Android/iOS manual checks remain explicitly pending in the platform-verification matrix and must be reported separately when actually performed.
