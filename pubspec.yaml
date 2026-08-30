@@ -1,7 +1,7 @@
 name: court_tally
 description: "Offline-first courtside scorekeeping for casual racket sports."
 publish_to: none
-version: 0.1.0+1
+version: 1.0.0+1
 
 environment:
   sdk: ">=3.13.0 <4.0.0"

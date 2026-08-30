@@ -44,5 +44,14 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Release signing credentials and private keys
+/android/key.properties
+*.jks
+*.keystore
+*.p12
+*.mobileprovision
+AuthKey_*.p8
+*-service-account.json
+
 # Widget Preview related
 .widget_preview/

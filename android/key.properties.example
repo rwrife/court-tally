@@ -1,0 +1,6 @@
+# Copy this file to android/key.properties and fill in local values.
+# Never commit key.properties, a keystore, passwords, API keys, or certificates.
+storeFile=/absolute/path/outside/the/repository/court-tally-upload.jks
+storePassword=replace-me
+keyAlias=upload
+keyPassword=replace-me
