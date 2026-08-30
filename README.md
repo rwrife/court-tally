@@ -75,6 +75,11 @@ Court Tally is offline-first. Match names, score events, presets, and history re
 - **Sensors/location/contacts/microphone:** not used.
 - Uninstalling the app may remove its local data unless the user exported a backup first.
 
+The complete user-facing policy is in [PRIVACY.md](PRIVACY.md). Create and
+verify a JSON backup before uninstalling, clearing app data, replacing history,
+changing devices, or installing an unverified build. CSV is not a restorable
+backup.
+
 ## Accessibility expectations
 
 All scoring actions must expose semantic labels and state to TalkBack and VoiceOver. Interactive targets should be at least 48 logical pixels, text must respect system scaling, focus order must be predictable, and no score/server state may rely on color alone. Landscape and portrait scoring views must remain operable with one hand or from a courtside stand.
@@ -85,7 +90,7 @@ Court Tally records recreational scores only. It does not provide medical, fitne
 
 ## Current status and milestones
 
-**Status: local-first MVP feature set complete; platform/release verification remains.** The repository contains a routed Flutter app, explicit architecture boundaries, dependency injection, automated tests, a pure-Dart event-sourced scoring domain, crash-safe Drift/SQLite persistence, an accessible setup-to-finish scoring workflow, filterable local history with event replay, privacy deletion controls, versioned lossless JSON backup/import, and escaped CSV summary export. In-progress matches resume locally and completed matches remain user-owned local history. Physical-device accessibility checks, release signing, TestFlight/store publication, and reproducible release artifacts are not yet complete.
+**Status: local-first 1.0.0 release candidate; manual release gates remain.** The repository contains a routed Flutter app, explicit architecture boundaries, dependency injection, automated tests, a pure-Dart event-sourced scoring domain, crash-safe Drift/SQLite persistence, an accessible setup-to-finish scoring workflow, filterable local history with event replay, privacy deletion controls, versioned lossless JSON backup/import, escaped CSV summary export, release legal/privacy metadata, and reproducible unsigned CI artifacts. In-progress matches resume locally and completed matches remain user-owned local history. Physical-device accessibility checks, release signing, TestFlight/store submission, and publication remain explicitly pending.
 
 1. **Foundation:** Flutter project, quality gates, and CI.
 2. **Completed:** implement and test the rule-aware scoring domain. See [the supported rules and sources](docs/scoring-rules.md).
@@ -97,6 +102,10 @@ Court Tally records recreational scores only. It does not provide medical, fitne
    simulator-build gates are documented in
    [the verification matrix](docs/verification.md). Physical-device,
    screen-reader, signing, and publication checks remain explicitly pending.
+7. **Release preparation complete:** MIT licensing, dependency/asset notices,
+   privacy metadata, branded platform icons, signing boundaries, an unsigned
+   Android release AAB, checksums, release notes, and a no-go checklist are
+   documented in [the release guide](docs/release.md).
 
 See [docs/architecture.md](docs/architecture.md) for layer rules and dependency direction.
 
@@ -109,7 +118,7 @@ Toolchain updates are deliberate changes reviewed with generated platform files 
 | Flutter | Stable **3.47.0**, pinned by `.fvmrc` and CI |
 | Dart | **3.13.0** minimum, `<4.0.0` |
 | Android | API **24** minimum; compile/target API **36**; Java 17 |
-| iOS | **15.0** minimum; current Xcode on a supported macOS runner |
+| iOS | Xcode **26.x** with the iOS 26 SDK; iOS **15.0** minimum deployment target |
 
 The Android and iOS values are explicit in their generated project files. Raising any minimum requires a documented compatibility decision. Flutter/Dart upgrades must update `.fvmrc`, `pubspec.yaml`, CI, platform files, and this table together.
 
@@ -153,11 +162,19 @@ flutter run
 # Development-only Android APK; not a signed release artifact.
 flutter build apk --debug
 
+# Release-mode Android App Bundle without signing credentials; compile evidence only.
+flutter build appbundle --release
+
 # macOS only: non-distributable iOS simulator build, without code signing.
 flutter build ios --simulator --debug --no-codesign
 ```
 
-CI runs both checks on supported runners. Passing them does not prove a physical-device run, accessibility review, release signing, TestFlight upload, or store publication.
+CI runs all three checks on supported runners. Passing them does not prove a physical-device run, accessibility review, release signing, TestFlight upload, or store publication.
+
+For the unsigned release AAB, protected signing workflows, iOS archive steps,
+artifact evidence stages, and final no-go gate, see
+[docs/release.md](docs/release.md) and
+[docs/release-checklist.md](docs/release-checklist.md).
 
 ### Troubleshooting
 
@@ -171,4 +188,8 @@ Dependency resolution and CI setup require development-time network access. The 
 
 ## License
 
-A project license will be selected and added before the first public release; source code must not be represented as release-ready until that is done.
+Court Tally source and original project artwork are available under the
+[MIT License](LICENSE). See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for
+runtime dependencies and [`assets/branding/LICENSE.md`](assets/branding/LICENSE.md)
+for artwork provenance. A binary distribution must retain Flutter's complete
+generated dependency notices.

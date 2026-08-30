@@ -16,8 +16,9 @@ publication.
 | Schema compatibility | A committed SQL fixture for every SQLite schema version opens with the current repository and preserves its match. A committed JSON fixture for every backup schema version decodes and imports. | `test/data/schema_version_fixture_test.dart`; currently SQLite v1 and backup v1. Add a fixture before incrementing either version. |
 | Accessibility | Semantics labels and state, live regions, explicit focus order, 48-pixel actions, 160-pixel score targets, 200–250% text, portrait/landscape layout, reduced-motion media settings, and key light/dark color-pair contrast. | Widget tests on the Flutter test renderer; no TalkBack/VoiceOver speech or touch ergonomics claim. |
 | Responsiveness sample | 21,000 reducer transitions and 100 transactional Drift appends are timed and operation counts/state are asserted. | `test/performance/responsiveness_test.dart`; diagnostic host sample, not a device benchmark or release threshold. |
-| Android compile | `flutter build apk --debug` and uploaded non-release APK. | GitHub-hosted Linux runner; development artifact only, not a signed release. |
-| iOS compile | `flutter build ios --simulator --debug --no-codesign`. | GitHub-hosted macOS runner; unsigned simulator-target compile only, not a launched simulator or distributable archive. |
+| Android debug compile | `flutter build apk --debug` and uploaded non-release APK. | GitHub-hosted Linux runner; development artifact only, not a signed release. |
+| Android release compile | `flutter build appbundle --release`, signature-entry absence check, SHA-256, and uploaded AAB/checksum. | GitHub-hosted Linux runner; unsigned release-mode artifact only, not installable or published. |
+| iOS compile | `flutter build ios --simulator --debug --no-codesign` and uploaded `Runner.app` bundle. | GitHub-hosted macOS/Xcode 26 runner; unsigned simulator-target compile only, not a launched simulator or distributable archive. |
 
 The permanent CI workflow uses Flutter 3.47.0 and runs:
 
@@ -28,6 +29,7 @@ dart format --output=none --set-exit-if-changed .
 flutter analyze
 flutter test --coverage
 flutter build apk --debug
+flutter build appbundle --release
 # macOS job only
 flutter build ios --simulator --debug --no-codesign
 ```
@@ -82,11 +84,12 @@ link to findings. “Pending” is not a pass.
 
 ## Artifact and release boundaries
 
-- The Android CI artifact is a debug APK. It is not a signed App Bundle, Play
-  Console upload, or publication result.
-- The iOS CI result is an unsigned simulator-target compile. It is not a launched
-  simulator test, physical-device build, signed archive, TestFlight upload, or
-  App Store submission.
+- The Android CI artifacts are a debug APK and an unsigned release-mode AAB
+  with a SHA-256 checksum. Neither is a signed Play package, Play Console
+  upload, installation result, or publication result.
+- The iOS CI artifact is an unsigned simulator-target app bundle. It is not a
+  launched simulator test, physical-device build, signed archive, TestFlight
+  upload, or App Store submission.
 - Physical-device, TalkBack, VoiceOver, signing, and publication evidence remains
-  pending until separately recorded. See the release work tracked after this
-  verification milestone.
+  pending until separately recorded. See [`release.md`](release.md) and the
+  explicit [`release checklist`](release-checklist.md).

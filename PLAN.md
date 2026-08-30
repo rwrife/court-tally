@@ -108,15 +108,19 @@ transactional merge/replace, escaped CSV summaries, platform picker/share
 boundaries, and in-app privacy copy are implemented. See
 [`docs/data-ownership.md`](docs/data-ownership.md).
 
-### M6 — Platform verification and release (automated verification complete)
+### M6 — Platform verification and release preparation (completed)
 
 The checked-in verification suite runs analyzer/tests and Android/iOS compile
 checks, exercises every sport through persistence, covers SQLite/backup schema
 fixtures, records a defined responsiveness sample, and automates supported
 accessibility assertions. The manual TalkBack/VoiceOver and physical-use matrix
-is documented with every unperformed result explicitly marked pending. Signing,
-release notes/artifacts, TestFlight, and store publication remain separate
-release work; see [`docs/verification.md`](docs/verification.md).
+is documented with every unperformed result explicitly marked pending. Release
+licensing, privacy metadata, branded icons, reproducible unsigned artifacts,
+checksums, signing boundaries, release notes, and the no-go checklist are also
+checked in. Physical-device/screen-reader evidence, protected signing,
+TestFlight, and store publication remain separate manual stages; see
+[`docs/verification.md`](docs/verification.md) and
+[`docs/release.md`](docs/release.md).
 
 ## Testing strategy
 
@@ -129,11 +133,11 @@ release work; see [`docs/verification.md`](docs/verification.md).
 
 ## Packaging and distribution
 
-- Android: signed App Bundle/APK instructions, with unsigned CI build artifacts for verification until release credentials exist.
-- iOS: Xcode archive/signing documentation; CI may validate simulator or unsigned builds separately from App Store-ready archives.
+- Android: signed App Bundle/APK instructions, with an unsigned release AAB and checksum in CI until protected release credentials exist.
+- iOS: Xcode archive/signing documentation plus a non-distributable simulator artifact in CI, kept separate from App Store-ready archives.
 - Versioning: semantic app version plus explicit database/export schema versions.
 - Distribution targets: GitHub Releases for appropriate development artifacts, then Google Play/TestFlight/App Store only after privacy metadata, screenshots, signing, and platform review are complete.
-- A license, privacy statement, changelog, and reproducible build notes are release blockers.
+- The license, privacy statement, changelog, reproducible build notes, and explicit no-go checklist are checked-in release inputs.
 
 ## Risks and mitigations
 

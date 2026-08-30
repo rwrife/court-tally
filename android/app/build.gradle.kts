@@ -1,8 +1,24 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+val keystorePropertiesFile = rootProject.file("key.properties")
+val keystoreProperties = Properties()
+val releaseSigningEnabled = keystorePropertiesFile.isFile
+if (releaseSigningEnabled) {
+    keystorePropertiesFile.inputStream().use { stream ->
+        keystoreProperties.load(stream)
+    }
+}
+
+fun signingProperty(name: String): String =
+    requireNotNull(keystoreProperties.getProperty(name)) {
+        "Missing $name in android/key.properties"
+    }
 
 android {
     namespace = "com.rwrife.court_tally"
@@ -19,14 +35,31 @@ android {
         applicationId = "com.rwrife.court_tally"
         minSdk = 24
         targetSdk = 36
-        // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
-        // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)
-        // You can force using the value of versionCode by specifying the `-P force-version-code-ignoring-abi=true`
-        // flag during build.
+        // Versions come from MAJOR.MINOR.PATCH+BUILD in pubspec.yaml.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (releaseSigningEnabled) {
+            create("release") {
+                keyAlias = signingProperty("keyAlias")
+                keyPassword = signingProperty("keyPassword")
+                storeFile = rootProject.file(signingProperty("storeFile"))
+                storePassword = signingProperty("storePassword")
+            }
+        }
+    }
+
+    buildTypes {
+        getByName("release") {
+            // CI intentionally omits key.properties and produces an unsigned AAB.
+            // Release owners provide the ignored file on a protected signing host.
+            if (releaseSigningEnabled) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+        }
+    }
 }
 
 kotlin {
