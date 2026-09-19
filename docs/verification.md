@@ -17,6 +17,6 @@ Xcode's test runner emitted a post-test diagnostic-collection warning because th
 
 ## Remaining release checks
 
-These results do not establish physical-device behavior, a signed upgrade from an installed Flutter release, full VoiceOver/TalkBack-style manual review, minimum-iOS-version runtime testing, App Store acceptance, or publication. Native minimum support is iOS 16.0; the runtime exercised here is iOS 26.5. Test iPad, landscape, very large Dynamic Type, Files destinations, and very large imported histories before release.
+These results do not establish physical-device behavior, a signed upgrade from an installed Flutter release, full VoiceOver/TalkBack-style manual review, minimum-iOS-version runtime testing, App Store acceptance, or publication. Native minimum support is iOS 16.0; the runtime exercised here is iOS 26.5. Test iPhone landscape, very large Dynamic Type, Files destinations, and very large imported histories before release.
 
-The native conversion is iOS/iPadOS only; archived Android code is not verified by native CI. Follow [the release guide](release.md) for signing and submission.
+The native app targets iPhone only; archived Android code is not verified by native CI. Follow [the release guide](release.md) for signing and submission.

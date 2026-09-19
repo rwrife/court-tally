@@ -1,5 +1,6 @@
 name: Native iOS CI
 on:
+  workflow_call:
   pull_request:
   push:
     branches: [main]
@@ -16,6 +17,8 @@ jobs:
       - uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: '26.0'
+      - name: Release tooling tests
+        run: python3 -m unittest discover -s scripts/tests -v
       - name: Core scoring, storage, backup, and migration tests
         run: swift test
       - name: Select an available iPhone simulator

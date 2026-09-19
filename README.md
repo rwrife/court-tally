@@ -17,14 +17,14 @@ A native SwiftUI scorekeeper for pickleball, tennis, badminton, and table tennis
 
 ## Native iOS app
 
-Open **[`ios-native/CourtTally.xcodeproj`](ios-native/CourtTally.xcodeproj)** in Xcode, select the **CourtTally** scheme, and run on an iPhone or iPad simulator. To run on a physical device, select your signing team in the app target.
+Open **[`ios-native/CourtTally.xcodeproj`](ios-native/CourtTally.xcodeproj)** in Xcode, select the **CourtTally** scheme, and run on an iPhone simulator. To run on a physical device, select your signing team in the app target.
 
 - **Language/UI:** Swift and SwiftUI; no Flutter engine, Dart runtime, CocoaPods, or third-party runtime packages.
-- **Deployment:** iOS/iPadOS **16.0+**. The native version raises the previous Flutter minimum from iOS 15 to iOS 16 for native navigation APIs.
+- **Deployment:** iPhone with iOS **16.0+**. The native version raises the previous Flutter minimum from iOS 15 to iOS 16 for native navigation APIs.
 - **Toolchain:** Xcode 26.x; Swift 5 language mode. Core package uses Swift tools 5.9+.
-- **Bundle ID:** `com.rwrife.courttally`, unchanged from the Flutter app.
+- **Bundle ID:** `com.infinityball.courttally`. This is a new app identity; use JSON export/import to transfer history from the previous bundle ID.
 - **Storage:** validated, versioned JSON written atomically to private Application Support storage. Apple's SQLite library is used only to read the previous Flutter database during migration.
-- **Icon:** the supplied Court Tally artwork, with generated iPhone, iPad, and 1024-pixel App Store assets.
+- **Icon:** the supplied Court Tally artwork, with generated iPhone and 1024-pixel App Store assets.
 
 The checked-in project is ready to open. If source files or project settings change, regenerate it using [XcodeGen](https://github.com/yonaskolb/XcodeGen):
 
@@ -59,6 +59,10 @@ xcodebuild -project ios-native/CourtTally.xcodeproj \
 
 Use `xcrun simctl list devices available` to find a simulator. See [verification](docs/verification.md) for recorded results and remaining release checks.
 
+## GitHub App Store release
+
+Use [Actions → App Store release](https://github.com/rwrife/court-tally/actions/workflows/app-store.yml) on `main`. Choose **build** for a signed verification IPA or **upload** to send a fresh build to App Store Connect. The workflow uses the existing `ASC_*` secrets, runs native tests, and signs the iPhone app as `com.infinityball.courttally`. A `v1.0.0`-style tag also triggers upload. See [release setup and signing details](docs/release.md). Apple processing, review, and publication remain separate steps.
+
 ## Screenshots and App Store copy
 
 The [6.5-inch screenshot set](docs/screenshots/iphone-6.5) contains portrait PNGs at **1242 × 2688**, captured directly from the native app on an iPhone 11 Pro Max simulator. The screenshots use fictional demo matches. See [Apple's screenshot specifications](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications).
@@ -77,7 +81,9 @@ Screenshot fixtures are compiled only into Debug builds and use an isolated temp
 
 ## Existing Flutter users and backups
 
-On first native launch, the app checks for `court_tally.sqlite` in its Application Support directory. It reads schema version 1 without modifying the database, validates every event stream, and writes the native store only after the entire migration succeeds. Unsupported or corrupt data blocks initialization rather than silently opening an empty store.
+The previous app used `com.rwrife.courttally`; the new app uses `com.infinityball.courttally`. iOS isolates storage by app identity, so export a JSON backup from the old app and import it into the new app. The new app cannot automatically access the old app’s sandbox.
+
+For a database already present inside the native app’s own sandbox, on first launch the app checks for `court_tally.sqlite` in its Application Support directory. It reads schema version 1 without modifying the database, validates every event stream, and writes the native store only after the entire migration succeeds. Unsupported or corrupt data blocks initialization rather than silently opening an empty store.
 
 The original SQLite database remains as a recovery copy. **Your data → Remove Flutter recovery copy** explicitly removes it. Deleting individual native matches does not alter that original copy; **Delete all local history** removes both stores. Exported files and device backups remain under the user's control.
 
@@ -91,7 +97,7 @@ Existing version-1 Court Tally JSON backups can also be imported from Files. Mer
 - `docs/` — native architecture, verification, store copy, and screenshots.
 - `legacy/flutter/` — preserved Flutter/Android implementation, tests, and historical documentation. It is not part of the native build or CI.
 
-This conversion delivers native **iOS/iPadOS**. The previous Android app remains in the legacy source; SwiftUI does not produce an Android application.
+This conversion delivers a native **iPhone app**. The previous Android app remains in the legacy source; SwiftUI does not produce an Android application.
 
 ## Privacy and license
 

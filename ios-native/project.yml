@@ -1,6 +1,6 @@
 name: CourtTally
 options:
-  bundleIdPrefix: com.rwrife
+  bundleIdPrefix: com.infinityball
   deploymentTarget:
     iOS: '16.0'
 settings:
@@ -10,7 +10,7 @@ settings:
     CURRENT_PROJECT_VERSION: '1'
     DEVELOPMENT_TEAM: ''
     CODE_SIGN_STYLE: Automatic
-    TARGETED_DEVICE_FAMILY: '1,2'
+    TARGETED_DEVICE_FAMILY: '1'
 targets:
   CourtTally:
     type: application
@@ -20,7 +20,8 @@ targets:
       - path: ../Sources/CourtTallyCore
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.rwrife.courttally
+        TARGETED_DEVICE_FAMILY: '1'
+        PRODUCT_BUNDLE_IDENTIFIER: com.infinityball.courttally
         INFOPLIST_FILE: CourtTally/Info.plist
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
@@ -32,7 +33,8 @@ targets:
     sources: [CourtTallyUITests]
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.rwrife.courttally.uitests
+        TARGETED_DEVICE_FAMILY: '1'
+        PRODUCT_BUNDLE_IDENTIFIER: com.infinityball.courttally.uitests
         GENERATE_INFOPLIST_FILE: YES
     dependencies:
       - target: CourtTally

@@ -16,7 +16,7 @@ Keep your focus on the next rally. Score four racket sports, undo mistakes, and 
 
 Less counting. More playing.
 
-Court Tally turns your iPhone or iPad into a clear, easy-to-use courtside scorecard for pickleball, tennis, badminton, and table tennis. Choose your game, name the players, and tap the side that wins each rally.
+Court Tally turns your iPhone into a clear, easy-to-use courtside scorecard for pickleball, tennis, badminton, and table tennis. Choose your game, name the players, and tap the side that wins each rally.
 
 SCORING THAT KNOWS YOUR SPORT
 • Pickleball: side-out scoring, singles and doubles service tracking, and games to 11, 15, or 21.
@@ -33,7 +33,7 @@ Review completed and in-progress matches. Filter by sport, player, date, or stat
 PRIVATE BY DESIGN
 No account. No ads. No tracking. No internet connection needed to keep score. Your match data stays on your device unless you choose to export it.
 
-MADE FOR IPHONE AND IPAD
+MADE FOR IPHONE
 A native interface with dark mode, adjustable system text sizes, VoiceOver labels, and spoken score updates when VoiceOver is in use.
 
 Whether you're playing a friendly singles match or keeping score for doubles, Court Tally helps you stay with the game.
@@ -50,11 +50,12 @@ Native SwiftUI edition with four-sport scoring, local match history, undo and re
 
 ## Submission notes
 
+- Bundle ID: `com.infinityball.courttally`.
 - No sign-in, subscription, or server is required.
 - Select a sport and rules preset, enter both side names, then tap Start match.
 - Pickleball uses side-out rules: winning a rally as the receiving side changes service instead of adding a point.
 - Change-ends prompts must be confirmed before recording the next rally.
 - Import accepts Court Tally JSON backups, including Flutter version-1 exports.
-- The app requires iOS/iPadOS 16.0 or later.
+- The app targets iPhone and requires iOS 16.0 or later.
 - The supplied 6.5-inch images are simulator captures of the real native screens with fictional data.
-- The app supports iPad; prepare the applicable iPad screenshots before submission. These iPhone screenshots do not fulfill the separate iPad slot.
+- The native app targets iPhone only (device family 1).

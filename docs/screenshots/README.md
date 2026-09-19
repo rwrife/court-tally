@@ -14,4 +14,4 @@ Seven screenshots of the native SwiftUI app, captured on an iPhone 11 Pro Max ru
 
 From the repository root, run `bash scripts/capture-screenshots.sh SIMULATOR_UDID` with a 1242 × 2688 simulator. The script builds Debug, installs, launches isolated fixture data, captures each scene, and verifies dimensions. Screenshot launch arguments and demo data are excluded from Release builds.
 
-The supplied icon is in `ios-native/CourtTally/Assets.xcassets/AppIcon.appiconset`. Store copy is in [app-store.md](../app-store.md). See [Apple's accepted screenshot sizes](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications). iPad screenshots remain a separate submission requirement for this universal app.
+The supplied icon is in `ios-native/CourtTally/Assets.xcassets/AppIcon.appiconset`. Store copy is in [app-store.md](../app-store.md). See [Apple's accepted screenshot sizes](https://developer.apple.com/help/app-store-connect/reference/app-information/screenshot-specifications). The native target is iPhone-only (device family 1).

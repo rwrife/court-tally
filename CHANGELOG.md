@@ -32,3 +32,14 @@ version from `pubspec.yaml`.
 - Added native core and UI tests and replaced Flutter CI with native iOS CI.
 - Adopted the project owner's supplied app icon and prepared native 6.5-inch screenshots and App Store copy.
 - Native minimum deployment target is iOS/iPadOS 16.0.
+
+## iPhone-only native target — 2026-09-19
+
+- Removed native iPad targeting, iPad-specific orientation settings, and iPad-only icon assets.
+- Updated current documentation and App Store copy for iPhone-only support.
+
+## App Store release automation — 2026-09-19
+
+- Changed the native bundle ID to `com.infinityball.courttally` and documented JSON transfer from the old app identity.
+- Added a GitHub Actions signed build/upload workflow using the existing App Store Connect API secrets, temporary per-run signing resources, and cleanup.
+- Added release metadata validation, exported IPA checks, release-tooling tests, and reusable native CI.

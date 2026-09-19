@@ -1,0 +1,148 @@
+name: App Store release
+run-name: App Store ${{ inputs.mode || 'upload' }} — ${{ inputs.version || github.ref_name }}
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Build a signed IPA, or build and upload to App Store Connect
+        type: choice
+        options: [build, upload]
+        default: build
+        required: true
+      version:
+        description: Marketing version (e.g. 1.0.0); blank uses the Xcode project version
+        type: string
+        default: ''
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+concurrency:
+  group: app-store-release
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    uses: ./.github/workflows/ci.yml
+  release:
+    needs: verify
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+      ASC_TEAM_ID: ${{ secrets.ASC_TEAM_ID }}
+      WANT_UPLOAD: ${{ (github.event_name == 'push' || inputs.mode == 'upload') && 'true' || 'false' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify release source and required credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge-base --is-ancestor HEAD origin/main
+          for NAME in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8 ASC_TEAM_ID; do
+            if [ -z "${!NAME}" ]; then
+              echo "::error::Missing repository secret: $NAME"
+              exit 1
+            fi
+          done
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '26.0'
+      - name: Choose version and unique build number
+        id: metadata
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          IOS_BUILD_NUMBER_BASE: ${{ vars.IOS_BUILD_NUMBER_BASE }}
+        run: python3 scripts/app_store_release.py metadata
+      - name: Prepare temporary Apple distribution signing
+        id: signing
+        run: python3 scripts/app_store_release.py prepare
+      - name: Archive the iPhone app
+        env:
+          RELEASE_VERSION: ${{ steps.metadata.outputs.version }}
+          RELEASE_BUILD: ${{ steps.metadata.outputs.build }}
+          CERTIFICATE_SHA1: ${{ steps.signing.outputs.certificate_sha1 }}
+          PROFILE_UUID: ${{ steps.signing.outputs.profile_uuid }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build/release
+          xcodebuild -project ios-native/CourtTally.xcodeproj -scheme CourtTally \
+            -configuration Release -destination 'generic/platform=iOS' \
+            -archivePath build/release/CourtTally.xcarchive \
+            DEVELOPMENT_TEAM="$ASC_TEAM_ID" CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="$CERTIFICATE_SHA1" PROVISIONING_PROFILE_SPECIFIER="$PROFILE_UUID" \
+            MARKETING_VERSION="$RELEASE_VERSION" CURRENT_PROJECT_VERSION="$RELEASE_BUILD" \
+            archive | tee build/release/archive.log
+      - name: Export signed App Store IPA
+        env:
+          EXPORT_OPTIONS: ${{ steps.signing.outputs.export_options }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcodebuild -exportArchive -archivePath build/release/CourtTally.xcarchive \
+            -exportPath build/release/export -exportOptionsPlist "$EXPORT_OPTIONS" \
+            | tee build/release/export.log
+      - name: Verify bundle, signature, and package
+        id: package
+        env:
+          RELEASE_VERSION: ${{ steps.metadata.outputs.version }}
+          RELEASE_BUILD: ${{ steps.metadata.outputs.build }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/verify-release.py
+          codesign --verify --deep --strict build/release/verified/Payload/CourtTally.app
+          ditto -c -k --keepParent build/release/CourtTally.xcarchive/dSYMs build/release/CourtTally-dSYMs.zip
+          (cd build/release && shasum -a 256 export/CourtTally.ipa CourtTally-dSYMs.zip > SHA256SUMS)
+      - name: Upload to App Store Connect
+        if: env.WANT_UPLOAD == 'true'
+        env:
+          AUTH_KEY: ${{ steps.signing.outputs.auth_key }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          export API_PRIVATE_KEYS_DIR="$(dirname "$AUTH_KEY")"
+          xcrun altool --validate-app -f build/release/export/CourtTally.ipa -t ios \
+            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
+          xcrun altool --upload-app -f build/release/export/CourtTally.ipa -t ios \
+            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
+      - name: Save signed IPA, symbols, and checksums
+        if: always() && steps.package.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: CourtTally-AppStore-${{ steps.metadata.outputs.version }}-${{ steps.metadata.outputs.build }}
+          path: |
+            build/release/export/CourtTally.ipa
+            build/release/CourtTally-dSYMs.zip
+            build/release/SHA256SUMS
+            build/release/release.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Release summary
+        env:
+          RELEASE_VERSION: ${{ steps.metadata.outputs.version }}
+          RELEASE_BUILD: ${{ steps.metadata.outputs.build }}
+          APP_PRESENT: ${{ steps.signing.outputs.app_present }}
+        run: |
+          {
+            echo "### Court Tally $RELEASE_VERSION ($RELEASE_BUILD)"
+            echo '- Bundle: com.infinityball.courttally'
+            echo '- Device family: iPhone only'
+            echo '- Signed IPA, dSYMs, and SHA-256 checksums are in the workflow artifact.'
+            if [ "$WANT_UPLOAD" = true ]; then
+              echo '- Upload accepted by the upload tool. Apple processing, review, and public release remain separate steps.'
+            else
+              echo '- Build only: nothing was uploaded to App Store Connect.'
+            fi
+            if [ "$APP_PRESENT" != true ]; then
+              echo '- Create the App Store Connect app record for this bundle ID before running upload.'
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Remove temporary signing resources
+        if: always() && steps.signing.outcome != 'skipped'
+        run: python3 scripts/app_store_release.py cleanup

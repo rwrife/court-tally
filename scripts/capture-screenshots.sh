@@ -19,8 +19,8 @@ xcrun simctl ui "$SIMULATOR_ID" appearance light
 SCENES=(setup pickleball tennis badminton tableTennis history data)
 INDEX=1
 for SCENE in "${SCENES[@]}"; do
-  xcrun simctl terminate "$SIMULATOR_ID" com.rwrife.courttally >/dev/null 2>&1 || true
-  xcrun simctl launch "$SIMULATOR_ID" com.rwrife.courttally --screenshot "$SCENE"
+  xcrun simctl terminate "$SIMULATOR_ID" com.infinityball.courttally >/dev/null 2>&1 || true
+  xcrun simctl launch "$SIMULATOR_ID" com.infinityball.courttally --screenshot "$SCENE"
   sleep 3
   printf -v NAME '%02d-%s.png' "$INDEX" "$SCENE"
   xcrun simctl io "$SIMULATOR_ID" screenshot "$OUTPUT/$NAME"
