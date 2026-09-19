@@ -9,7 +9,7 @@ to score and retain matches.
 ## Data the app stores
 
 Court Tally stores player or team names, rules presets, score events, in-progress
-matches, and match history in the app's private local database on the device.
+matches, and match history in the app's private local storage on the device.
 The developer does not operate a backend that receives this information.
 Court Tally includes no analytics, no advertising SDK, and no user tracking.
 
@@ -36,7 +36,7 @@ operations. Replace can remove local records not present in the selected backup.
 
 Local records remain until the user deletes them in Court Tally, replaces them
 with an imported backup, clears app data, or uninstalls the app. Uninstalling or
-clearing app data normally removes the local database. Operating-system device
+clearing app data normally removes local storage. Operating-system device
 backups may retain app data according to the user's platform backup settings.
 Court Tally does not control those backups.
 
@@ -44,6 +44,15 @@ Users should create and verify a JSON backup before uninstalling, clearing app
 data, replacing history, changing devices, or installing an unverified build.
 The developer cannot recover a lost local database because no server copy
 exists.
+
+## Migration from the Flutter version
+
+The native app can import the existing Flutter database on the same device. The
+original database is retained as a recovery copy. Deleting an individual native
+match or replacing native history does not alter that copy. Remove it explicitly
+under **Your data → Remove Flutter recovery copy**, or use **Delete all local
+history** to remove native matches and the recovery copy together. Exported
+files and operating-system backups are not deleted by these actions.
 
 ## Changes and questions
 

@@ -23,3 +23,12 @@ version from `pubspec.yaml`.
 - JSON is the only lossless backup format; CSV files cannot be imported as backups.
 
 [1.0.0]: https://github.com/rwrife/court-tally/releases/tag/v1.0.0
+
+## Native SwiftUI conversion — 2026-09-19
+
+- Replaced the active Flutter build with a native SwiftUI iPhone/iPad app and testable Swift scoring core; preserved the original implementation in `legacy/flutter`.
+- Ported all six scoring presets, undo/redo, serving state, change-ends prompts, history, event replay, backup/import, and CSV export.
+- Added atomic native storage and read-only migration from the Flutter v1 SQLite database.
+- Added native core and UI tests and replaced Flutter CI with native iOS CI.
+- Adopted the project owner's supplied app icon and prepared native 6.5-inch screenshots and App Store copy.
+- Native minimum deployment target is iOS/iPadOS 16.0.

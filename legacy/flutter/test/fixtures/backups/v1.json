@@ -1,0 +1,49 @@
+{
+  "format": "court-tally-backup",
+  "schemaVersion": 1,
+  "exportedAt": "2026-08-26T12:00:00.000Z",
+  "presets": [
+    {
+      "id": "badminton.bwf.best-of-3-to-21",
+      "version": 1,
+      "name": "Badminton: best of 3 to 21",
+      "sport": "badminton",
+      "unitsToWin": 2,
+      "pointsToWinGame": 21,
+      "winBy": 2,
+      "pointCap": 30,
+      "gamesToWinSet": null,
+      "tiebreakAtGames": null,
+      "tiebreakPoints": null
+    }
+  ],
+  "participants": [
+    {"id": "backup-v1-north", "name": "North"},
+    {"id": "backup-v1-south", "name": "South"}
+  ],
+  "matches": [
+    {
+      "id": "backup-v1-match",
+      "presetId": "badminton.bwf.best-of-3-to-21",
+      "presetVersion": 1,
+      "sideOne": {
+        "name": "North",
+        "participants": [
+          {"id": "backup-v1-north", "nameAtMatch": "North"}
+        ]
+      },
+      "sideTwo": {
+        "name": "South",
+        "participants": [
+          {"id": "backup-v1-south", "nameAtMatch": "South"}
+        ]
+      },
+      "createdAt": "2026-08-25T12:00:00.000Z",
+      "updatedAt": "2026-08-25T12:00:00.000Z",
+      "completedAt": null,
+      "status": "awaitingInitialServer",
+      "winner": null,
+      "events": []
+    }
+  ]
+}
