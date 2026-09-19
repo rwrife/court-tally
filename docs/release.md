@@ -18,7 +18,7 @@ gh workflow run app-store.yml --ref main -f mode=upload -f version=1.0.0
 
 Pushing a release tag such as **`v1.0.0`** also runs the upload path, using the tag as the marketing version. A release commit must already be on `main`; other branches cannot run the signing job. Do not create a release tag until you intend to upload that version.
 
-Uploads appear in App Store Connect only after Apple's processing. This workflow does **not** submit for review, choose testers, accept agreements, or publish the app publicly. Complete those steps in App Store Connect.
+The upload action waits up to 30 minutes for Apple's processing to finish before removing its temporary signing certificate. If processing is unconfirmed, it preserves the remote signing assets and reports their IDs for follow-up instead of revoking a certificate Apple may still need. This workflow does **not** submit for review, choose testers, accept agreements, or publish the app publicly. Complete those steps in App Store Connect.
 
 ## Existing GitHub secrets
 

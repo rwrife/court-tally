@@ -90,5 +90,40 @@ class ReleaseTests(unittest.TestCase):
             self.assertEqual(json.loads(signing.state_path.read_text())['certificate_id'], 'our-cert')
 
 
+    def test_unconfirmed_upload_keeps_remote_certificate_but_removes_local_key(self):
+        with tempfile.TemporaryDirectory() as directory:
+            signing = release.Signing.__new__(release.Signing)
+            signing.folder = Path(directory)
+            signing.state_path = signing.folder / 'state.json'
+            signing.state = {'certificate_id': 'our-cert', 'profile_id': 'our-profile', 'upload_pending': True}
+            signing.request = Mock()
+            signing.save()
+            key = signing.folder / 'AuthKey_test.p8'
+            key.write_text('test-only')
+            with self.assertRaises(RuntimeError):
+                signing.cleanup()
+            signing.request.assert_not_called()
+            self.assertFalse(key.exists())
+
+    def test_processing_valid_allows_signing_cleanup(self):
+        signing = release.Signing.__new__(release.Signing)
+        signing.state = {'upload_pending': True}
+        signing.save = Mock()
+        signing.request = Mock(return_value={'data': [{'attributes': {'processingState': 'VALID'}}]})
+        with patch.dict(os.environ, {'ASC_APP_ID': '123', 'RELEASE_BUILD': '1001.1'}):
+            signing.wait_processing(timeout=1)
+        self.assertFalse(signing.state['upload_pending'])
+        signing.save.assert_called_once()
+
+    def test_processing_timeout_does_not_revoke_signing(self):
+        signing = release.Signing.__new__(release.Signing)
+        signing.state = {'upload_pending': True}
+        signing.request = Mock()
+        with patch.dict(os.environ, {'ASC_APP_ID': '123', 'RELEASE_BUILD': '1001.1'}):
+            with self.assertRaises(RuntimeError):
+                signing.wait_processing(timeout=0)
+        self.assertTrue(signing.state['upload_pending'])
+
+
 if __name__ == '__main__':
     unittest.main()

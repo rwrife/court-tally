@@ -103,14 +103,18 @@ jobs:
         if: env.WANT_UPLOAD == 'true'
         env:
           AUTH_KEY: ${{ steps.signing.outputs.auth_key }}
+          ASC_APP_ID: ${{ steps.signing.outputs.app_id }}
+          RELEASE_BUILD: ${{ steps.metadata.outputs.build }}
         shell: bash
         run: |
           set -euo pipefail
           export API_PRIVATE_KEYS_DIR="$(dirname "$AUTH_KEY")"
           xcrun altool --validate-app -f build/release/export/CourtTally.ipa -t ios \
             --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
+          python3 scripts/app_store_release.py mark-upload
           xcrun altool --upload-app -f build/release/export/CourtTally.ipa -t ios \
             --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
+          python3 scripts/app_store_release.py wait-processing
       - name: Save signed IPA, symbols, and checksums
         if: always() && steps.package.outcome == 'success'
         uses: actions/upload-artifact@v4
@@ -135,7 +139,7 @@ jobs:
             echo '- Device family: iPhone only'
             echo '- Signed IPA, dSYMs, and SHA-256 checksums are in the workflow artifact.'
             if [ "$WANT_UPLOAD" = true ]; then
-              echo '- Upload accepted by the upload tool. Apple processing, review, and public release remain separate steps.'
+              echo '- Apple processed the uploaded build successfully. Review and public release remain separate steps.'
             else
               echo '- Build only: nothing was uploaded to App Store Connect.'
             fi
