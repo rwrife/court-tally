@@ -1,6 +1,8 @@
 import importlib.util
 import json
 import os
+import plistlib
+import re
 from pathlib import Path
 import tempfile
 import unittest
@@ -55,9 +57,19 @@ class ReleaseTests(unittest.TestCase):
     def test_exported_info_rejects_old_bundle_and_ipad(self):
         info = {'CFBundleIdentifier': release.BUNDLE_ID, 'CFBundleVersion': '1005.2', 'CFBundleShortVersionString': '1.2.3', 'UIDeviceFamily': [1]}
         verify.validate_info(info, '1.2.3', '1005.2')
-        for changes in [{'UIDeviceFamily': [1, 2]}, {'CFBundleIdentifier': 'com.rwrife.courttally'}, {'CFBundleVersion': '1'}]:
+        for changes in [{'UIDeviceFamily': [1, 2]}, {'CFBundleIdentifier': 'com.rwrife.courttally'}, {'CFBundleVersion': '1'}, {'UISupportedInterfaceOrientations~ipad': ['UIInterfaceOrientationPortrait']}]:
             with self.assertRaises(ValueError):
                 verify.validate_info(info | changes, '1.2.3', '1005.2')
+
+    def test_checked_in_project_is_iphone_only(self):
+        root = Path(__file__).parents[2]
+        info = plistlib.loads((root / 'ios-native/CourtTally/Info.plist').read_bytes())
+        self.assertNotIn('UISupportedInterfaceOrientations~ipad', info)
+        project = (root / 'ios-native/CourtTally.xcodeproj/project.pbxproj').read_text()
+        families = re.findall(r'TARGETED_DEVICE_FAMILY = ([^;]+);', project)
+        self.assertTrue(families)
+        self.assertTrue(all(value.strip('"') == '1' for value in families))
+        self.assertIn('PRODUCT_BUNDLE_IDENTIFIER = com.infinityball.courttally;', project)
 
     def test_cleanup_only_deletes_its_own_resources(self):
         with tempfile.TemporaryDirectory() as directory:
